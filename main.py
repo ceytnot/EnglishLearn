@@ -2,7 +2,7 @@
 # pip freeze > requirements.txt
 from tkinter import *
 from tkinter import ttk
-from functions import get_random_words, GW, get_dict, speak_word, switch_keyboard_layout, async_beep
+from functions import get_random_words, GW, get_dict, speak_word, switch_keyboard_layout, async_beep, keyboard_layout
 from datetime import datetime
 from time import sleep
 import random
@@ -31,6 +31,7 @@ def start_game() -> None:
     input_field["state"] = "normal"
     finish_game_lbl['text'] = ''
     update_progress(GW.total_words)
+    key_layout['text'] = f"{keyboard_layout()}"
 
 
 # functions
@@ -78,11 +79,16 @@ def click_submit_button(event=None):
                     GW.second_pass_check = True
                     GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict)
                     switch_keyboard_layout()
+                    key_layout['text'] = f"{keyboard_layout()}"
 
         GW.word_to_speak = random.choice(list(GW.rus_word))
         label_eng_word['text'] = GW.word_to_speak
         words_with_mistakes_lbl['text'] = ', '.join(GW.words_with_mistakes)
+        
         root.update()
+        key_layout['text'] = f"{keyboard_layout()}" # windows update language input only after root.update
+        root.update()
+
         speak_word(GW.eng_word)
 
 def click_voice_button():
@@ -104,6 +110,8 @@ frame_1_1.pack(anchor=NW, fill=X, padx=5, pady=5)
 
 ###
 frame_2_1 = ttk.Frame(borderwidth=1, relief=SOLID, padding=10, height=40)
+key_layout = ttk.Label(frame_2_1, text=f"{keyboard_layout()}", font=("Arial", 15))
+key_layout.pack(fill='both', anchor=W, side='right')
 frame_2_1.pack(anchor=N, fill=X, padx=5, pady=5)
 
 ###

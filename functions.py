@@ -4,6 +4,7 @@ import ctypes
 import pyttsx3
 import winsound
 import threading
+import ctypes.wintypes
 
 
 """VOICE for word"""
@@ -41,6 +42,7 @@ class GW():
     second_pass_check = False
     words_with_mistakes = set()
     output_file_name = datetime.now().strftime('%d%m%Y_%H%M%S')
+    total_words = 0
 
 def speak_word(word) -> None:
     """Speak word with Windows app if some voices are available""" 
@@ -55,7 +57,7 @@ def speak_word(word) -> None:
 
 
     thread = threading.Thread(target=run_speech)
-    thread.daemon = True      
+    thread.daemon = True
     thread.start()
 
 
@@ -67,6 +69,31 @@ def async_beep(frequency=300, duration=800):
     thread = threading.Thread(target=winsound.Beep, args=(frequency, duration))
     thread.daemon = True
     thread.start()
+
+
+def keyboard_layout():
+    """Check code of current layout"""
+
+    languages = {
+        0x409: "Английский",
+        0x419: "Русский"
+    }
+
+    try:
+        # get active window
+        hwnd = ctypes.windll.user32.GetForegroundWindow()
+        # get ID of window
+        thread_id = ctypes.windll.user32.GetWindowThreadProcessId(hwnd, 0)
+        # get layout
+        layout_id = ctypes.windll.user32.GetKeyboardLayout(thread_id)
+        
+        # beleive me this is necessary
+        lang_id = layout_id & 0xFFFF
+        
+        return languages[lang_id]
+    
+    except Exception as e:
+        return e
 
 
     
