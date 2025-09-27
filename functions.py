@@ -1,7 +1,9 @@
 import random
 from datetime import datetime
-
+import ctypes
 import pyttsx3
+import winsound
+import threading
 
 
 """VOICE for word"""
@@ -10,31 +12,61 @@ voices = engine.getProperty('voices')       #getting details of current voice
 engine.setProperty('voice', voices[0].id)
 engine.setProperty('rate', 110)
 
-def get_dict():
+def get_dict() -> dict:
+    """Return 2 dicts - second with reverse words"""
     words_dict_origin = {}
+    words_dict_reverse = {}
     with open("dictionary.txt", "r", encoding="utf-8") as file:
-        for line in file:
-            words_dict_origin[line.strip().split('#')[0]] = line.strip().split('#')[1]
-    return words_dict_origin
+        for i, line in enumerate(file):
+            words_dict_origin[i] = (set([x.strip().lower().replace('  ', ' ') for x in line.strip().split('#')[0].split(',') if x]), 
+                                    set([x.strip().lower().replace('  ', ' ') for x in line.strip().split('#')[1].split(',') if x]))
+            
+            words_dict_reverse[i] = (set([x.strip().lower().replace('  ', ' ') for x in line.strip().split('#')[1].split(',') if x]), 
+                                     set([x.strip().lower().replace('  ', ' ') for x in line.strip().split('#')[0].split(',') if x]))
+    
+    return words_dict_origin, words_dict_reverse
 
 
 def get_random_words(words_dict: dict) -> str:
     """Returns random pair key and value from words dictionary"""
-    return random.choice(list(words_dict.items()))
+    random_choice = random.choice(list(words_dict.items()))
+    return random_choice[0], random_choice[1][0], (random_choice[1][1])
 
 class GW():
     """For GLOBAL variables"""
+    id = ''
     eng_word = ''
     rus_word = ''
-    correct_counter = 0
+    word_to_speak = ''
+    second_pass_check = False
     words_with_mistakes = set()
     output_file_name = datetime.now().strftime('%d%m%Y_%H%M%S')
 
-def speak_word(word: str) -> None:
-    """Speak word with Windows app if some voices are available"""
-    try:
+def speak_word(word) -> None:
+    """Speak word with Windows app if some voices are available""" 
+
+    if isinstance(word, set):
+        word = ' '.join(word)
+
+    def run_speech():
+
         engine.say(word)
         engine.runAndWait()
-    except:
-        pass
+
+
+    thread = threading.Thread(target=run_speech)
+    thread.daemon = True      
+    thread.start()
+
+
+def switch_keyboard_layout():
+    """Swith to next keyboard layout: eng -> rus"""
+    ctypes.windll.user32.PostMessageW(0xFFFF, 0x0050, 0, 0)
+
+def async_beep(frequency=300, duration=800):
+    thread = threading.Thread(target=winsound.Beep, args=(frequency, duration))
+    thread.daemon = True
+    thread.start()
+
+
     

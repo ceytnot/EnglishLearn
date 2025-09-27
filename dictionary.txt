@@ -1,11 +1,3 @@
-it's sunny#солнечно
-it's hot#жарко
-it's raining#дождь
-jacket#куртка
-coat#пальто
-take off#снять
-put on#надеть
-shorts#шорты
-hat#шляпа
-jump#прыгать
-I can run#я могу бегать
+their,#их,
+father,dad#папа,
+mother,mum#мама,

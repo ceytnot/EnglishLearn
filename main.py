@@ -1,81 +1,105 @@
 # C:\Users\NewHorizon\Documents\PythonProjects\EnglishLearn\venv\Scripts\Activate.ps1
+# pip freeze > requirements.txt
 from tkinter import *
 from tkinter import ttk
-from functions import get_random_words, GW, get_dict, speak_word
+from functions import get_random_words, GW, get_dict, speak_word, switch_keyboard_layout, async_beep
 from datetime import datetime
+from time import sleep
+import random
+import winsound
 
 
-def start_game():
+def update_progress(left_words):
+    progress['value'] = (left_words / GW.total_words) * 100
+
+def start_game() -> None:
     GW.output_file_name = datetime.now().strftime('%d%m%Y_%H%M%S')
     global words_dict
-    words_dict = get_dict()
-    GW.eng_word, GW.rus_word = get_random_words(words_dict)    
-    label_eng_word['text'] = GW.rus_word
+    global words_dict_reverse 
+    GW.second_pass_check = False
+    words_dict, words_dict_reverse = get_dict()
+    GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict) 
+    GW.word_to_speak = random.choice(list(GW.rus_word))
+    label_eng_word['text'] = GW.word_to_speak
     great_lbl['text'] = ''
-    label_counter['text'] = len(get_dict())
-    GW.correct_counter = len(words_dict)
+    label_counter['text'] = len(words_dict) + len(words_dict_reverse)
+    GW.total_words = len(words_dict) + len(words_dict_reverse)
     input_field.delete(0, 'end')
     input_field.focus()
     GW.words_with_mistakes = set()
     submit_btn["state"] = "normal"
     input_field["state"] = "normal"
-    finish_game_lbl['text'] = ''    
+    finish_game_lbl['text'] = ''
+    update_progress(GW.total_words)
+
 
 # functions
 def click_submit_button(event=None):
-    input_word = input_field.get().strip().lower()
+    global words_dict
+    input_word = input_field.get().strip().lower().replace('  ', ' ')
     if input_word:  # if something is typed
-        if input_word == GW.eng_word:
+        if input_word in GW.eng_word:     
+
+            del words_dict[GW.id]
+            
+            submit_btn["state"] = "enabled"
+            input_field["state"] = "enabled"
+            voice_btn["state"] = "enabled"
             great_lbl['text'] = "МОЛОДЕЦ! Идем дальше!"
-
-            try:
-                del words_dict[GW.eng_word]
-            except KeyError:
-                pass
-
-            GW.correct_counter = len(words_dict)
+            winsound.PlaySound("MailBeep", winsound.SND_ALIAS | winsound.SND_ASYNC)
+            sleep(0.5)
             
         else:
             great_lbl['text'] = "НЕПРАВИЛЬНО"
-
-            GW.words_with_mistakes.add(GW.eng_word)
+            async_beep()
+            sleep(0.5)
+            GW.words_with_mistakes.add(GW.word_to_speak)
 
         with open(f"Output_{GW.output_file_name}.txt", "a") as text_file:
                 text_file.write(f'{GW.eng_word} - {input_word}\n')
 
-        label_prev_world['text'] = f'Искомое слово:\n   {GW.eng_word}'
+        label_prev_world['text'] = f'Искомое слово:\n   {GW.word_to_speak}'
         label_prev_answer['text'] = f'Написанное слово:\n   {input_word}'
 
-        label_counter['text'] = str(GW.correct_counter)
+        label_counter['text'] = len(words_dict) + len(words_dict_reverse)
         input_field.delete(0, 'end')
+        update_progress(left_words = len(words_dict) + len(words_dict_reverse))
         input_field.focus()
 
         try:
-            GW.eng_word, GW.rus_word = get_random_words(words_dict)            
+            GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict)            
         except IndexError:
-                finish_game_lbl['text'] = 'ТЫ ДОШЁЛ ДО КОНЦА! МОЛОДЕЦ!'
-                submit_btn["state"] = "disabled"
-                input_field["state"] = "disabled"
+                if GW.second_pass_check == True:
+                    finish_game_lbl['text'] = 'ТЫ ДОШЁЛ ДО КОНЦА! МОЛОДЕЦ!'
+                    submit_btn["state"] = "disabled"
+                    input_field["state"] = "disabled"
+                else:
+                    words_dict = words_dict_reverse
+                    GW.second_pass_check = True
+                    GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict)
+                    switch_keyboard_layout()
 
-        label_eng_word['text'] = GW.rus_word
+        GW.word_to_speak = random.choice(list(GW.rus_word))
+        label_eng_word['text'] = GW.word_to_speak
         words_with_mistakes_lbl['text'] = ', '.join(GW.words_with_mistakes)
         root.update()
         speak_word(GW.eng_word)
 
 def click_voice_button():
-     speak_word(GW.eng_word)
+     speak_word(GW.rus_word) if GW.second_pass_check else speak_word(GW.eng_word)  # on 2nd iteration rus_word contains ENG word
+     input_field.focus()
 
 
 
 root = Tk()     # создаем корневой объект - окно
-root.title("Учим Английский с папой-программистом")     # устанавливаем заголовок окна
+root.title("Учим Слова с папой-программистом")     # устанавливаем заголовок окна
 root.geometry("1280x800")    # устанавливаем размеры окна
 
 
 ###
 frame_1_1 = ttk.Frame(borderwidth=1, relief=SOLID, padding=10)
-label_description = ttk.Label(frame_1_1,text="За каждый правильный ответ тебе будет начисляться один балл, за неправильный - вычитаться один балл", font=("Arial", 10))
-label_description.pack()
+progress = ttk.Progressbar(frame_1_1, mode='determinate')
+progress.pack(fill='x')
 frame_1_1.pack(anchor=NW, fill=X, padx=5, pady=5)
 
 ###
@@ -89,7 +113,7 @@ title_label_counter = ttk.Label(frame_3_1, text="Слов выучить ост�
 title_label_counter.pack()
 label_counter = ttk.Label(frame_3_1, text="0", font=("Arial", 15))
 label_counter.pack(fill='both', anchor=N)
-label_counter['text'] = len(get_dict())
+label_counter['text'] = len(get_dict()[0]) + len(get_dict()[1]) # rus + eng dicts
 frame_3_1.pack(anchor=N, fill="both", side="left", padx=5, pady=5)
 
 #
@@ -152,7 +176,7 @@ root.bind('<Return>', func=click_submit_button)
 
 start_game()
 
-root.update()   # root update needs to show indow before Text spech is running
+root.update()   # root update needs to show window before Text spech is running
 speak_word(GW.eng_word)
 
 root.mainloop()
