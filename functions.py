@@ -11,7 +11,7 @@ import ctypes.wintypes
 engine = pyttsx3.init() # object creation
 voices = engine.getProperty('voices')       #getting details of current voice
 engine.setProperty('voice', voices[0].id)
-engine.setProperty('rate', 110)
+engine.setProperty('rate', 90)
 
 def get_dict() -> dict:
     """Return 2 dicts - second with reverse words"""
@@ -51,14 +51,16 @@ def speak_word(word) -> None:
         word = ' '.join(word)
 
     def run_speech():
-
-        engine.say(word)
-        engine.runAndWait()
-
+        try:
+            engine.say(word)
+            engine.runAndWait()
+        except RuntimeError:
+            pass
 
     thread = threading.Thread(target=run_speech)
     thread.daemon = True
     thread.start()
+    
 
 
 def switch_keyboard_layout():
