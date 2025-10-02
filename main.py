@@ -24,11 +24,12 @@ def start_game() -> None:
     great_lbl['text'] = ''
     label_counter['text'] = len(words_dict) + len(words_dict_reverse)
     GW.total_words = len(words_dict) + len(words_dict_reverse)
-    input_field.delete(0, 'end')
     input_field.focus()
     GW.words_with_mistakes = set()
     submit_btn["state"] = "normal"
     input_field["state"] = "normal"
+    input_field.insert(0, f"{'_' * len(list(GW.eng_word)[0])}")
+    #input_field.icursor(0)
     finish_game_lbl['text'] = ''
     update_progress(GW.total_words)
     key_layout['text'] = f"{keyboard_layout()}"
@@ -37,7 +38,7 @@ def start_game() -> None:
 # functions
 def click_submit_button(event=None):
     global words_dict
-    input_word = input_field.get().strip().lower().replace('  ', ' ')
+    input_word = input_field.get().strip().lower().replace('  ', ' ').replace("_", "")
     if input_word:  # if something is typed
         if input_word in GW.eng_word:     
 
@@ -46,6 +47,7 @@ def click_submit_button(event=None):
             submit_btn["state"] = "enabled"
             input_field["state"] = "enabled"
             voice_btn["state"] = "enabled"
+            advise_btn["state"] = "enabled"
             great_lbl['text'] = "МОЛОДЕЦ! Идем дальше!"
             winsound.PlaySound("MailBeep", winsound.SND_ALIAS | winsound.SND_ASYNC)
             sleep(0.5)
@@ -63,9 +65,9 @@ def click_submit_button(event=None):
         label_prev_answer['text'] = f'Написанное слово:\n   {input_word}'
 
         label_counter['text'] = len(words_dict) + len(words_dict_reverse)
-        input_field.delete(0, 'end')
+        
         update_progress(left_words = len(words_dict) + len(words_dict_reverse))
-        input_field.focus()
+        
 
         try:
             GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict)            
@@ -74,16 +76,23 @@ def click_submit_button(event=None):
                     finish_game_lbl['text'] = 'ТЫ ДОШЁЛ ДО КОНЦА! МОЛОДЕЦ!'
                     submit_btn["state"] = "disabled"
                     input_field["state"] = "disabled"
+                    advise_btn["state"] = "disabled"
                 else:
                     words_dict = words_dict_reverse
                     GW.second_pass_check = True
                     GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict)
                     switch_keyboard_layout()
                     key_layout['text'] = f"{keyboard_layout()}"
+                    input_field.delete(0, 'end')
 
         GW.word_to_speak = random.choice(list(GW.rus_word))
         label_eng_word['text'] = GW.word_to_speak
         words_with_mistakes_lbl['text'] = ', '.join(GW.words_with_mistakes)
+
+        if GW.second_pass_check == False:
+            input_field.delete(0, 'end')
+            input_field.insert(0, f"{'_' * len(list(GW.eng_word)[0])}")
+            GW.position_count = 0
         
         root.update()
         key_layout['text'] = f"{keyboard_layout()}" # windows update language input only after root.update
@@ -95,12 +104,43 @@ def click_voice_button():
      speak_word(GW.rus_word) if GW.second_pass_check else speak_word(GW.eng_word)  # on 2nd iteration rus_word contains ENG word
      input_field.focus()
 
+def some_letter_advise():
+    input_part_of_world = input_field.get().replace("_", "")
+    len_of_input_text = len(input_part_of_world)
+    input_field.delete(0, 'end')
+    try:
+        input_field.insert(0, f"{input_part_of_world}{list(GW.eng_word)[0][len_of_input_text]}")
+    except IndexError:
+         input_field.insert(0, input_part_of_world)
+    
+    input_field.focus()
+    advise_btn["state"] = "disabled"
+
+def on_input_change(event) -> None:
+    """Catch letters and Backspace to show correct numbers of _ _ _ instead of symbols"""
+    # _ _ _ _ only for eng words as tkinter doesn't like cyrillic
+    if GW.second_pass_check == False:
+        if (event.keysym == 'BackSpace' or event.keycode == 8 or event.char == '\x08'):
+            current_word = input_field.get()
+            GW.position_count = GW.position_count - 1 if GW.position_count > 0 else 0
+            current_word = current_word[:GW.position_count] + "_" * (len(list(GW.eng_word)[0]) - len(current_word[:GW.position_count]))  
+
+            input_field.delete(0, 'end')
+            input_field.insert(0, f"{current_word}")     
+
+        elif event.char:
+            GW.position_count = GW.position_count + 1
+            current_word = input_field.get().replace("_", "")
+            current_word = current_word + "_" * (len(list(GW.eng_word)[0]) - len(current_word))
+
+            input_field.delete(0, 'end')
+            input_field.insert(0, f"{current_word}")    
 
 
-root = Tk()     # создаем корневой объект - окно
-root.title("Учим Слова с папой-программистом")     # устанавливаем заголовок окна
-root.geometry("1280x800")    # устанавливаем размеры окна
-
+# ###############################################
+root = Tk() 
+root.title("Учим Английский (и неvного Русский)")
+root.geometry("1300x800")
 
 ###
 frame_1_1 = ttk.Frame(borderwidth=1, relief=SOLID, padding=10)
@@ -135,7 +175,8 @@ frame_3_2.pack(anchor=N, fill="both", side="left", padx=5, pady=5)
 #
 frame_3_3 = ttk.Frame(frame_3, borderwidth=1, relief=SOLID, padding=10)
 frame_3_3_1 = ttk.Frame(frame_3_3, borderwidth=1, relief=SOLID)
-input_field = ttk.Entry(frame_3_3_1, font=("Arial", 30), justify="center")
+input_field = ttk.Entry(frame_3_3_1, font=("Cascadia Code", 30), justify="center")
+input_field.bind('<KeyRelease>', on_input_change)
 input_field.pack(fill="both")
 input_field.focus()
 
@@ -145,8 +186,10 @@ submit_btn.pack(fill='both')
 frame_3_3_1.pack(anchor=NE, fill="both", side="left", padx=5, pady=5)
 
 frame_3_3_2 = ttk.Frame(frame_3_3, borderwidth=0, relief=SOLID)
-voice_btn = ttk.Button(frame_3_3_2, text="Подсказка", command=click_voice_button)
+voice_btn = ttk.Button(frame_3_3_2, text="Звук", command=click_voice_button)
 voice_btn.pack(fill='both', expand=True)
+advise_btn = ttk.Button(frame_3_3_2, text="Буква", command=some_letter_advise)
+advise_btn.pack(fill='both', expand=True)
 frame_3_3_2.pack(anchor=NE, fill="both", side="left", padx=5, pady=5)
 
 frame_3_3.pack(anchor=NE, fill="both", side="left", padx=5, pady=5)

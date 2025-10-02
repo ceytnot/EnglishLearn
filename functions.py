@@ -43,6 +43,7 @@ class GW():
     words_with_mistakes = set()
     output_file_name = datetime.now().strftime('%d%m%Y_%H%M%S')
     total_words = 0
+    position_count = 0
 
 def speak_word(word) -> None:
     """Speak word with Windows app if some voices are available""" 
