@@ -12,6 +12,12 @@ import winsound
 def update_progress(left_words):
     progress['value'] = (left_words / GW.total_words) * 100
 
+def start_choice_game() -> None:
+    frames_to_hide = [frame_1_1, frame_2_1, frame_3, frame_4]
+    
+    for frame in frames_to_hide:
+        frame.pack_forget()
+
 def start_game() -> None:
     GW.output_file_name = datetime.now().strftime('%d%m%Y_%H%M%S')
     global words_dict
@@ -139,7 +145,7 @@ def on_input_change(event) -> None:
 
 # ###############################################
 root = Tk() 
-root.title("Учим Английский (и неvного Русский)")
+root.title("Учим Английский (и немного Русский)")
 root.geometry("1300x800")
 
 ###
@@ -147,6 +153,12 @@ frame_1_1 = ttk.Frame(borderwidth=1, relief=SOLID, padding=10)
 progress = ttk.Progressbar(frame_1_1, mode='determinate')
 progress.pack(fill='x')
 frame_1_1.pack(anchor=NW, fill=X, padx=5, pady=5)
+###
+frame_select_game = ttk.Frame(borderwidth=1, relief=SOLID, padding=10, height=40)
+voice_btn = ttk.Button(frame_select_game, text="Словарь", command='learn_dictionary')
+voice_btn.pack(fill='both', expand=True)
+advise_btn = ttk.Button(frame_select_game, text="Лесенка", command='learn_upstairs')
+advise_btn.pack(fill='both', expand=True)
 
 ###
 frame_2_1 = ttk.Frame(borderwidth=1, relief=SOLID, padding=10, height=40)
@@ -225,7 +237,9 @@ frame_5.pack(fill=X, padx=5, pady=5)
 
 root.bind('<Return>', func=click_submit_button)
 
-start_game()
+start_choice_game()
+
+
 
 root.update()   # root update needs to show window before Text spech is running
 speak_word(GW.eng_word)
