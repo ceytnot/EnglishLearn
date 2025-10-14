@@ -8,10 +8,13 @@ import ctypes.wintypes
 
 
 """VOICE for word"""
-engine = pyttsx3.init() # object creation
-voices = engine.getProperty('voices')       #getting details of current voice
-engine.setProperty('voice', voices[0].id)
-engine.setProperty('rate', 90)
+def init_speech_engine():
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')       #getting details of current voice
+    engine.setProperty('voice', voices[0].id)
+    engine.setProperty('rate', 90)
+
+    return engine
 
 def get_dict() -> dict:
     """Return 2 dicts - second with reverse words"""
@@ -45,7 +48,7 @@ class GW():
     total_words = 0
     position_count = 0
 
-def speak_word(word) -> None:
+def speak_word(word):
     """Speak word with Windows app if some voices are available""" 
 
     if isinstance(word, set):
@@ -53,16 +56,19 @@ def speak_word(word) -> None:
 
     def run_speech():
         try:
+            engine = init_speech_engine()
             engine.say(word)
             engine.runAndWait()
+            engine.stop()
         except RuntimeError:
             pass
+
 
     thread = threading.Thread(target=run_speech)
     thread.daemon = True
     thread.start()
     
-
+    
 
 def switch_keyboard_layout():
     """Swith to next keyboard layout: eng -> rus"""
