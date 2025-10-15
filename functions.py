@@ -36,6 +36,7 @@ def get_random_words(words_dict: dict) -> str:
     random_choice = random.choice(list(words_dict.items()))
     return random_choice[0], random_choice[1][0], (random_choice[1][1])
 
+
 class GW():
     """For GLOBAL variables"""
     id = ''
@@ -47,6 +48,8 @@ class GW():
     output_file_name = datetime.now().strftime('%d%m%Y_%H%M%S')
     total_words = 0
     position_count = 0
+    upst_current = 0
+    upst_limit_for_circle = 1
 
 def speak_word(word):
     """Speak word with Windows app if some voices are available""" 

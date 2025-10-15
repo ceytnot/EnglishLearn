@@ -7,38 +7,6 @@ import random
 from datetime import datetime
 
 
-class InitialFrame:
-    def __init__(self):
-        self.root = Tk() 
-        self.root.title("Учим Английский (и немного Русский)")
-        self.root.geometry("1300x800")
-
-        self.select_game()
-    
-    def select_game(self):
-        self.frame_select_game = ttk.Frame(self.root, borderwidth=1, relief=SOLID, padding=10, height=300)
-        self.inform_lbl = ttk.Label(self.frame_select_game, text="ВЫБЕРИ ИГРУ", font=("Arial", 20))
-        self.inform_lbl.pack(pady=20)
-        self.dict_btn = ttk.Button(self.frame_select_game, text="Словарь", command=self.start_dictionary_game)
-        self.dict_btn.pack(fill='both', expand=True)
-        self.upstairs_btn = ttk.Button(self.frame_select_game, text="Лесенка", command=self.start_upstairs_game)
-        self.upstairs_btn.pack(fill='both', expand=True)
-        self.frame_select_game.pack(anchor=NW, fill=X, padx=5, pady=5)
-
-    def start_dictionary_game(self):
-
-        self.frame_select_game.pack_forget()
-        self.dictionary_game = DictionaryGame(self.root)
-
-    def start_upstairs_game(self):
-        print("Запуск игры лесенка") 
-    
-    def run(self):
-        self.root.mainloop()
-
-
-
-
 class DictionaryGame:
     def __init__(self, root):
         self.root = root
@@ -141,7 +109,6 @@ class DictionaryGame:
         global words_dict_reverse 
         GW.second_pass_check = False
         words_dict, words_dict_reverse = get_dict()
-        self.label_counter['text'] = len(get_dict()[0]) + len(get_dict()[1]) # rus + eng dicts
         GW.id, GW.eng_word, GW.rus_word = get_random_words(words_dict) 
         GW.word_to_speak = random.choice(list(GW.rus_word))
         self.label_eng_word['text'] = GW.word_to_speak
